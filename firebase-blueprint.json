@@ -1,0 +1,700 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user's private profile information stored under their UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the profile owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full display name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified email address.",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile avatar URL.",
+          "maxLength": 500
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional phone number.",
+          "maxLength": 30
+        },
+        "department": {
+          "type": "string",
+          "description": "Optional role or department label.",
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last login timestamp."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "photoURL",
+        "phone",
+        "department",
+        "createdAt",
+        "updatedAt",
+        "lastLoginAt"
+      ]
+    },
+    "CreatorProfile": {
+      "title": "CreatorProfile",
+      "description": "Public non-PII creator identity and official certificate record linked via QR code.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Creator Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Creator public display name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Creator avatar URL.",
+          "maxLength": 500
+        },
+        "department": {
+          "type": "string",
+          "description": "Creator designation or creative discipline.",
+          "maxLength": 80
+        },
+        "certificateCode": {
+          "type": "string",
+          "description": "Immutable official certificate serial number.",
+          "minLength": 4,
+          "maxLength": 40,
+          "pattern": "^[A-Z0-9_\\-]+$"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Visibility state for QR portfolio verification."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "photoURL",
+        "department",
+        "certificateCode",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LoginSession": {
+      "title": "LoginSession",
+      "description": "Immutable sign-in event record visible only in the Admin Dashboard.",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Unique identifier for the login session.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userDisplayName": {
+          "type": "string",
+          "description": "Snapshot of user display name at login time.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "userEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Snapshot of user verified email at login time.",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["google", "password"],
+          "description": "Authentication provider used for sign-in."
+        },
+        "deviceLabel": {
+          "type": "string",
+          "description": "Browser and platform summary.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the login event."
+        }
+      },
+      "required": [
+        "sessionId",
+        "userId",
+        "userDisplayName",
+        "userEmail",
+        "provider",
+        "deviceLabel",
+        "createdAt"
+      ]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted admin role assignment document.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Admin Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Admin email address.",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server assignment timestamp."
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "PublishedPhoto": {
+      "title": "PublishedPhoto",
+      "description": "Uploaded photo/design card streamed live to all users until deleted by Admin.",
+      "type": "object",
+      "properties": {
+        "photoId": {
+          "type": "string",
+          "description": "Unique identifier for the uploaded photo card.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Photo/design headline.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "quoteText": {
+          "type": "string",
+          "description": "Optional poetic quote overlay text.",
+          "maxLength": 400
+        },
+        "album": {
+          "type": "string",
+          "description": "Album grouping label.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Compressed data URI or image URL.",
+          "minLength": 5,
+          "maxLength": 300000
+        },
+        "storyBody": {
+          "type": "string",
+          "description": "Accompanying story text for broadsheet reading and audio playback.",
+          "maxLength": 15000
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Author or publisher display name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Visibility state for public portfolio and gallery listing."
+        },
+        "uploadedByUid": {
+          "type": "string",
+          "description": "Uploader Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "photoId",
+        "title",
+        "quoteText",
+        "album",
+        "imageUrl",
+        "storyBody",
+        "authorName",
+        "visibility",
+        "uploadedByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PublishedStory": {
+      "title": "PublishedStory",
+      "description": "Published newspaper story streamed live to all users until deleted by Admin.",
+      "type": "object",
+      "properties": {
+        "storyId": {
+          "type": "string",
+          "description": "Unique identifier for the published story.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Story title.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Story summary/deck.",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "author": {
+          "type": "string",
+          "description": "Story author name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "description": "Story genre or category.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "section": {
+          "type": "string",
+          "enum": ["updated", "new"],
+          "description": "Shelf placement."
+        },
+        "coverImage": {
+          "type": "string",
+          "description": "Cover image data URI or URL.",
+          "minLength": 5,
+          "maxLength": 300000
+        },
+        "episodeTitle": {
+          "type": "string",
+          "description": "Episode heading.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "paragraphs": {
+          "type": "array",
+          "description": "Story paragraphs."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Visibility state for public portfolio and gallery listing."
+        },
+        "uploadedByUid": {
+          "type": "string",
+          "description": "Uploader Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "storyId",
+        "title",
+        "subtitle",
+        "author",
+        "category",
+        "section",
+        "coverImage",
+        "episodeTitle",
+        "paragraphs",
+        "visibility",
+        "uploadedByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DesignLike": {
+      "title": "DesignLike",
+      "description": "One-per-user like reaction on a design or story.",
+      "type": "object",
+      "properties": {
+        "likeId": {
+          "type": "string",
+          "description": "Deterministic composite ID: {designId}__{userId}.",
+          "minLength": 3,
+          "maxLength": 256,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "designId": {
+          "type": "string",
+          "description": "Target photo or story design ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Liker Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userDisplayName": {
+          "type": "string",
+          "description": "Display name of the user who liked.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Public visibility for reaction counts."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the like."
+        }
+      },
+      "required": ["likeId", "designId", "userId", "userDisplayName", "visibility", "createdAt"]
+    },
+    "DesignComment": {
+      "title": "DesignComment",
+      "description": "User comment on a design or story.",
+      "type": "object",
+      "properties": {
+        "commentId": {
+          "type": "string",
+          "description": "Unique comment identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "designId": {
+          "type": "string",
+          "description": "Target photo or story design ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Author Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userDisplayName": {
+          "type": "string",
+          "description": "Comment author display name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "userPhotoURL": {
+          "type": "string",
+          "description": "Comment author avatar URL.",
+          "maxLength": 500
+        },
+        "text": {
+          "type": "string",
+          "description": "Comment body text.",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Public visibility for comment threads."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": [
+        "commentId",
+        "designId",
+        "userId",
+        "userDisplayName",
+        "userPhotoURL",
+        "text",
+        "visibility",
+        "createdAt"
+      ]
+    },
+    "DesignShare": {
+      "title": "DesignShare",
+      "description": "Recorded share event on a design or story.",
+      "type": "object",
+      "properties": {
+        "shareId": {
+          "type": "string",
+          "description": "Unique share event identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "designId": {
+          "type": "string",
+          "description": "Target photo or story design ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Sharer Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["copy", "native", "qr"],
+          "description": "Method used to share the design."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Public visibility for share count aggregation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["shareId", "designId", "userId", "channel", "visibility", "createdAt"]
+    },
+    "CommentNotification": {
+      "title": "CommentNotification",
+      "description": "Comment notification record sent to a designer's Gmail and in-app inbox.",
+      "type": "object",
+      "properties": {
+        "notificationId": {
+          "type": "string",
+          "description": "Unique notification identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "recipientUid": {
+          "type": "string",
+          "description": "Designer Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderUid": {
+          "type": "string",
+          "description": "Commenter Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Commenter display name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "designId": {
+          "type": "string",
+          "description": "Target design or story ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "designTitle": {
+          "type": "string",
+          "description": "Title of the commented design.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "commentText": {
+          "type": "string",
+          "description": "Excerpt of the posted comment.",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "emailStatus": {
+          "type": "string",
+          "enum": ["sent", "queued_no_smtp", "no_recipient_email", "failed"],
+          "description": "Delivery status of the Gmail notification."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Whether the designer has read this notification."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "notificationId",
+        "recipientUid",
+        "senderUid",
+        "senderName",
+        "designId",
+        "designTitle",
+        "commentText",
+        "emailStatus",
+        "isRead",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Owner-isolated private user account profiles (admin readable)."
+    },
+    "/creator_profiles/{creatorId}": {
+      "schema": {
+        "$ref": "#/entities/CreatorProfile"
+      },
+      "description": "Public non-PII creator identity and official certificate credentials scanned via QR code."
+    },
+    "/login_sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/LoginSession"
+      },
+      "description": "Sign-in audit trail readable and manageable exclusively by admins."
+    },
+    "/admins/{adminId}": {
+      "schema": {
+        "$ref": "#/entities/AdminRecord"
+      },
+      "description": "Admin role registry."
+    },
+    "/published_photos/{photoId}": {
+      "schema": {
+        "$ref": "#/entities/PublishedPhoto"
+      },
+      "description": "Verified user and Admin uploaded photos/designs synced live to all users; deletable only by Admin."
+    },
+    "/published_stories/{storyId}": {
+      "schema": {
+        "$ref": "#/entities/PublishedStory"
+      },
+      "description": "Verified user and Admin published stories synced live to all users; deletable only by Admin."
+    },
+    "/design_likes/{likeId}": {
+      "schema": {
+        "$ref": "#/entities/DesignLike"
+      },
+      "description": "Per-user likes on designs/stories."
+    },
+    "/design_comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/DesignComment"
+      },
+      "description": "User comments on designs/stories."
+    },
+    "/design_shares/{shareId}": {
+      "schema": {
+        "$ref": "#/entities/DesignShare"
+      },
+      "description": "Share records on designs/stories."
+    },
+    "/comment_notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/CommentNotification"
+      },
+      "description": "Owner-isolated comment notifications delivered to the designer's inbox and Gmail."
+    }
+  }
+}

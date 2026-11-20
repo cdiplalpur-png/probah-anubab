@@ -1,0 +1,390 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidCompositeId(id) {
+      return id is string && id.size() >= 3 && id.size() <= 256 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() &&
+        'email' in request.auth.token &&
+        request.auth.token.email is string &&
+        request.auth.token.email.lower() == 'inboxdocument17@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'email', 'photoURL', 'phone', 'department', 'createdAt', 'updatedAt', 'lastLoginAt'
+      ]) && data.keys().hasOnly([
+        'uid', 'displayName', 'email', 'photoURL', 'phone', 'department', 'createdAt', 'updatedAt', 'lastLoginAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+      data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+      data.photoURL is string && data.photoURL.size() <= 500 &&
+      data.phone is string && data.phone.size() <= 30 &&
+      data.department is string && data.department.size() <= 80 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp &&
+      data.lastLoginAt is timestamp;
+    }
+
+    function isValidCreatorProfile(data) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'photoURL', 'department', 'certificateCode', 'visibility', 'createdAt', 'updatedAt'
+      ]) && data.keys().hasOnly([
+        'uid', 'displayName', 'photoURL', 'department', 'certificateCode', 'visibility', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+      data.photoURL is string && data.photoURL.size() <= 500 &&
+      data.department is string && data.department.size() <= 80 &&
+      data.certificateCode is string && data.certificateCode.size() >= 4 && data.certificateCode.size() <= 40 &&
+      data.certificateCode.matches('^[A-Z0-9_\\-]+$') &&
+      data.visibility is string && data.visibility == 'public' &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidLoginSession(data) {
+      return data.keys().hasAll([
+        'sessionId', 'userId', 'userDisplayName', 'userEmail', 'provider', 'deviceLabel', 'createdAt'
+      ]) && data.keys().hasOnly([
+        'sessionId', 'userId', 'userDisplayName', 'userEmail', 'provider', 'deviceLabel', 'createdAt'
+      ]) &&
+      isValidId(data.sessionId) &&
+      isValidId(data.userId) &&
+      data.userId == request.auth.uid &&
+      data.userDisplayName is string && data.userDisplayName.size() >= 1 && data.userDisplayName.size() <= 100 &&
+      data.userEmail is string && data.userEmail.size() >= 3 && data.userEmail.size() <= 200 &&
+      data.provider is string && data.provider in ['google', 'password'] &&
+      data.deviceLabel is string && data.deviceLabel.size() >= 1 && data.deviceLabel.size() <= 120 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidPublishedPhoto(data) {
+      return data.keys().hasAll([
+        'photoId', 'title', 'quoteText', 'album', 'imageUrl', 'storyBody', 'authorName', 'visibility', 'uploadedByUid', 'createdAt', 'updatedAt'
+      ]) && data.keys().hasOnly([
+        'photoId', 'title', 'quoteText', 'album', 'imageUrl', 'storyBody', 'authorName', 'visibility', 'uploadedByUid', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.photoId) &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.quoteText is string && data.quoteText.size() <= 400 &&
+      data.album is string && data.album.size() >= 1 && data.album.size() <= 80 &&
+      data.imageUrl is string && data.imageUrl.size() >= 5 && data.imageUrl.size() <= 300000 &&
+      data.storyBody is string && data.storyBody.size() <= 15000 &&
+      data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 100 &&
+      data.visibility is string && data.visibility == 'public' &&
+      isValidId(data.uploadedByUid) &&
+      data.uploadedByUid == request.auth.uid &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidPublishedStory(data) {
+      return data.keys().hasAll([
+        'storyId', 'title', 'subtitle', 'author', 'category', 'section', 'coverImage', 'episodeTitle', 'paragraphs', 'visibility', 'uploadedByUid', 'createdAt', 'updatedAt'
+      ]) && data.keys().hasOnly([
+        'storyId', 'title', 'subtitle', 'author', 'category', 'section', 'coverImage', 'episodeTitle', 'paragraphs', 'visibility', 'uploadedByUid', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.storyId) &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.subtitle is string && data.subtitle.size() >= 1 && data.subtitle.size() <= 300 &&
+      data.author is string && data.author.size() >= 1 && data.author.size() <= 100 &&
+      data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+      data.section is string && data.section in ['updated', 'new'] &&
+      data.coverImage is string && data.coverImage.size() >= 5 && data.coverImage.size() <= 300000 &&
+      data.episodeTitle is string && data.episodeTitle.size() >= 1 && data.episodeTitle.size() <= 120 &&
+      data.paragraphs is list && data.paragraphs.size() >= 1 && data.paragraphs.size() <= 30 &&
+      data.paragraphs[0] is string && data.paragraphs[0].size() >= 1 && data.paragraphs[0].size() <= 4000 &&
+      data.visibility is string && data.visibility == 'public' &&
+      isValidId(data.uploadedByUid) &&
+      data.uploadedByUid == request.auth.uid &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidDesignLike(data) {
+      return data.keys().hasAll([
+        'likeId', 'designId', 'userId', 'userDisplayName', 'visibility', 'createdAt'
+      ]) && data.keys().hasOnly([
+        'likeId', 'designId', 'userId', 'userDisplayName', 'visibility', 'createdAt'
+      ]) &&
+      isValidCompositeId(data.likeId) &&
+      isValidId(data.designId) &&
+      isValidId(data.userId) &&
+      data.userId == request.auth.uid &&
+      data.userDisplayName is string && data.userDisplayName.size() >= 1 && data.userDisplayName.size() <= 100 &&
+      data.visibility is string && data.visibility == 'public' &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidDesignComment(data) {
+      return data.keys().hasAll([
+        'commentId', 'designId', 'userId', 'userDisplayName', 'userPhotoURL', 'text', 'visibility', 'createdAt'
+      ]) && data.keys().hasOnly([
+        'commentId', 'designId', 'userId', 'userDisplayName', 'userPhotoURL', 'text', 'visibility', 'createdAt'
+      ]) &&
+      isValidId(data.commentId) &&
+      isValidId(data.designId) &&
+      isValidId(data.userId) &&
+      data.userId == request.auth.uid &&
+      data.userDisplayName is string && data.userDisplayName.size() >= 1 && data.userDisplayName.size() <= 100 &&
+      data.userPhotoURL is string && data.userPhotoURL.size() <= 500 &&
+      data.text is string && data.text.size() >= 1 && data.text.size() <= 1000 &&
+      data.visibility is string && data.visibility == 'public' &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidDesignShare(data) {
+      return data.keys().hasAll([
+        'shareId', 'designId', 'userId', 'channel', 'visibility', 'createdAt'
+      ]) && data.keys().hasOnly([
+        'shareId', 'designId', 'userId', 'channel', 'visibility', 'createdAt'
+      ]) &&
+      isValidId(data.shareId) &&
+      isValidId(data.designId) &&
+      isValidId(data.userId) &&
+      data.userId == request.auth.uid &&
+      data.channel is string && data.channel in ['copy', 'native', 'qr'] &&
+      data.visibility is string && data.visibility == 'public' &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidCommentNotification(data) {
+      return data.keys().hasAll([
+        'notificationId', 'recipientUid', 'senderUid', 'senderName', 'designId', 'designTitle', 'commentText', 'emailStatus', 'isRead', 'createdAt', 'updatedAt'
+      ]) && data.keys().hasOnly([
+        'notificationId', 'recipientUid', 'senderUid', 'senderName', 'designId', 'designTitle', 'commentText', 'emailStatus', 'isRead', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.notificationId) &&
+      isValidId(data.recipientUid) &&
+      isValidId(data.senderUid) &&
+      data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 100 &&
+      isValidId(data.designId) &&
+      data.designTitle is string && data.designTitle.size() >= 1 && data.designTitle.size() <= 120 &&
+      data.commentText is string && data.commentText.size() >= 1 && data.commentText.size() <= 1000 &&
+      data.emailStatus is string && data.emailStatus in ['sent', 'queued_no_smtp', 'no_recipient_email', 'failed'] &&
+      data.isRead is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isBootstrappedAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        request.auth.uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        incoming().lastLoginAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        isOwner(userId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().email == existing().email &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'phone', 'department', 'photoURL', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['lastLoginAt', 'updatedAt', 'photoURL', 'displayName'])
+        );
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /creator_profiles/{creatorId} {
+      allow get: if isValidId(creatorId) && (resource == null || resource.data.visibility == 'public');
+      allow list: if resource.data.visibility == 'public';
+      allow create: if isVerifiedUser() &&
+        isValidId(creatorId) &&
+        isValidCreatorProfile(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        request.auth.uid == creatorId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(creatorId) &&
+        isValidCreatorProfile(incoming()) &&
+        (isOwner(creatorId) || isAdmin()) &&
+        incoming().uid == existing().uid &&
+        incoming().certificateCode == existing().certificateCode &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'department', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(creatorId);
+    }
+
+    match /login_sessions/{sessionId} {
+      allow get: if isValidId(sessionId) && isAdmin();
+      allow list: if isBootstrappedAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(sessionId) &&
+        isValidLoginSession(incoming()) &&
+        incoming().sessionId == sessionId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow update: if false;
+      allow delete: if isValidId(sessionId) && isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isBootstrappedAdmin();
+      allow create: if isBootstrappedAdmin() &&
+        isValidId(adminId) &&
+        isValidAdminRecord(incoming()) &&
+        incoming().uid == adminId &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isBootstrappedAdmin() && isValidId(adminId);
+    }
+
+    match /published_photos/{photoId} {
+      allow get: if isValidId(photoId) && (resource == null || resource.data.visibility == 'public');
+      allow list: if resource.data.visibility == 'public';
+      allow create: if isVerifiedUser() &&
+        isValidId(photoId) &&
+        isValidPublishedPhoto(incoming()) &&
+        incoming().photoId == photoId &&
+        incoming().uploadedByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(photoId);
+    }
+
+    match /published_stories/{storyId} {
+      allow get: if isValidId(storyId) && (resource == null || resource.data.visibility == 'public');
+      allow list: if resource.data.visibility == 'public';
+      allow create: if isVerifiedUser() &&
+        isValidId(storyId) &&
+        isValidPublishedStory(incoming()) &&
+        incoming().storyId == storyId &&
+        incoming().uploadedByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(storyId);
+    }
+
+    match /design_likes/{likeId} {
+      allow get: if isValidCompositeId(likeId) && (resource == null || resource.data.visibility == 'public');
+      allow list: if resource.data.visibility == 'public';
+      allow create: if isVerifiedUser() &&
+        isValidCompositeId(likeId) &&
+        isValidDesignLike(incoming()) &&
+        likeId == (incoming().designId + '__' + request.auth.uid) &&
+        incoming().likeId == likeId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidCompositeId(likeId) && resource != null && (isOwner(existing().userId) || isAdmin());
+    }
+
+    match /design_comments/{commentId} {
+      allow get: if isValidId(commentId) && (resource == null || resource.data.visibility == 'public');
+      allow list: if resource.data.visibility == 'public';
+      allow create: if isVerifiedUser() &&
+        isValidId(commentId) &&
+        isValidDesignComment(incoming()) &&
+        incoming().commentId == commentId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(commentId) && resource != null && (isOwner(existing().userId) || isAdmin());
+    }
+
+    match /design_shares/{shareId} {
+      allow get: if isValidId(shareId) && (resource == null || resource.data.visibility == 'public');
+      allow list: if resource.data.visibility == 'public';
+      allow create: if isVerifiedUser() &&
+        isValidId(shareId) &&
+        isValidDesignShare(incoming()) &&
+        incoming().shareId == shareId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(shareId);
+    }
+
+    match /comment_notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && (
+        resource == null ||
+        isOwner(existing().recipientUid) ||
+        isOwner(existing().senderUid) ||
+        isAdmin()
+      );
+      allow list: if isVerifiedUser() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isVerifiedUser() &&
+        isValidId(notificationId) &&
+        isValidCommentNotification(incoming()) &&
+        incoming().notificationId == notificationId &&
+        incoming().senderUid == request.auth.uid &&
+        incoming().isRead == false &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(notificationId) &&
+        isValidCommentNotification(incoming()) &&
+        isOwner(existing().recipientUid) &&
+        incoming().notificationId == existing().notificationId &&
+        incoming().recipientUid == existing().recipientUid &&
+        incoming().senderUid == existing().senderUid &&
+        incoming().designId == existing().designId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['isRead', 'updatedAt']);
+      allow delete: if isValidId(notificationId) && resource != null && (isOwner(existing().recipientUid) || isAdmin());
+    }
+  }
+}

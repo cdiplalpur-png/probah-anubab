@@ -1,0 +1,8 @@
+{
+  "name": "প্রবাহ — নিরাপদ লগইন পোর্টাল",
+  "description": "আধুনিক ও নিরাপদ বাংলা লগইন, নিবন্ধন এবং অ্যাকাউন্ট ব্যবস্থাপনা পোর্টাল।",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
